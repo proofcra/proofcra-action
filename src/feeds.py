@@ -13,7 +13,12 @@ import httpx
 
 from models import ExploitIntelligence
 
-CISA_KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+CISA_KEV_URLS = (
+    # Official CISA GitHub data feed (datacenter-friendly, zero Akamai 403 blocks)
+    "https://raw.githubusercontent.com/cisagov/kev-data/main/known_exploited_vulnerabilities.json",
+    # Direct cisa.gov fallback
+    "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+)
 ENISA_EUVD_LOOKUP_URL = "https://euvdservices.enisa.europa.eu/api/enisaid"
 
 KEV_TTL_SECONDS = 6 * 3600
@@ -70,18 +75,23 @@ class ThreatIntelClient:
                     print(f"[ProofCRA] Warning: failed to read KEV cache: {exc}", file=sys.stderr)
 
         if raw_payload is None and not self.offline:
-            try:
-                resp = self._http.get(CISA_KEV_URL)
-                resp.raise_for_status()
-                raw_payload = resp.json()
-                cache_file.write_text(json.dumps(raw_payload), encoding="utf-8")
-            except Exception as exc:
-                print(f"[ProofCRA] Warning: failed to fetch live CISA KEV feed: {exc}", file=sys.stderr)
-                if cache_file.exists():
-                    try:
-                        raw_payload = json.loads(cache_file.read_text(encoding="utf-8"))
-                    except Exception:
-                        raw_payload = None
+            for url in CISA_KEV_URLS:
+                try:
+                    resp = self._http.get(url)
+                    resp.raise_for_status()
+                    candidate = resp.json()
+                    if isinstance(candidate, dict) and isinstance(candidate.get("vulnerabilities"), list):
+                        raw_payload = candidate
+                        cache_file.write_text(json.dumps(raw_payload), encoding="utf-8")
+                        break
+                except Exception as exc:
+                    print(f"[ProofCRA] Warning: KEV source failed ({url}): {exc}", file=sys.stderr)
+
+            if raw_payload is None and cache_file.exists():
+                try:
+                    raw_payload = json.loads(cache_file.read_text(encoding="utf-8"))
+                except Exception:
+                    raw_payload = None
 
         index: dict[str, dict[str, Any]] = {}
         if raw_payload and isinstance(raw_payload.get("vulnerabilities"), list):
