@@ -1,6 +1,6 @@
 name: "ProofCRA EU CRA & NIS2 Scanner"
 author: "ProofCRA"
-description: "CycloneDX SBOM, OSV-Scanner v2.7.1, CISA KEV + ENISA EUVD active-exploit filter, and AST/config reachability gate for the 24h EU CRA clock."
+description: "CycloneDX SBOM, OSV-Scanner, CISA KEV + ENISA EUVD filter, and AST reachability gate for the 24h EU CRA clock."
 branding:
   icon: "shield"
   color: "blue"
