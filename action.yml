@@ -1,0 +1,52 @@
+name: "ProofCRA EU CRA & NIS2 Scanner"
+author: "ProofCRA"
+description: "CycloneDX SBOM, OSV-Scanner v2.7.1, CISA KEV + ENISA EUVD active-exploit filter, and AST/config reachability gate for the 24h EU CRA clock."
+branding:
+  icon: "shield"
+  color: "blue"
+
+inputs:
+  target-path:
+    description: "Relative path inside the repository to scan (default: repository root '.')"
+    required: false
+    default: "."
+  regime:
+    description: "EU regulatory regime: 'CRA' (Cyber Resilience Act) or 'NIS2' (pure cloud SaaS)"
+    required: false
+    default: "CRA"
+  fail-on-cra-clock:
+    description: "Fail the workflow if an actively exploited + reachable vulnerability triggers the 24h ENISA reporting clock"
+    required: false
+    default: "true"
+  run-tier3-proof:
+    description: "Run deterministic Tier-3 precondition & config-mitigation checks plus minimal patch diff generation"
+    required: false
+    default: "true"
+  output-dir:
+    description: "Relative output directory for sbom.cdx.json, cra_report.json, and tier3_proofs.json"
+    required: false
+    default: "proofcra-artifacts"
+  gemini-api-key:
+    description: "Optional Gemini API key (Gemini 3.8 Flash / 3.5 Flash-Lite) for enhanced ENISA SRP prose. Omit for 100% deterministic mode."
+    required: false
+    default: ""
+
+outputs:
+  cra-clock-triggered:
+    description: "'true' if an actively exploited, reachable CVE triggers the 24h ENISA clock, else 'false'"
+  total-vulnerabilities:
+    description: "Total deduplicated dependency vulnerabilities found by OSV-Scanner"
+  actively-exploited-count:
+    description: "Count of CISA KEV / ENISA EUVD actively exploited CVEs"
+  noise-reduction-pct:
+    description: "Percentage of non-CRA-clock alert noise eliminated deterministically"
+  sbom-path:
+    description: "Path to generated CycloneDX SBOM JSON"
+  report-path:
+    description: "Path to generated cra_report.json"
+  tier3-receipt-path:
+    description: "Path to Tier-3 cryptographic proof receipt (if enabled)"
+
+runs:
+  using: "docker"
+  image: "Dockerfile"

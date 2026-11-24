@@ -1,0 +1,28 @@
+name: Self-Test ProofCRA Action
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify-action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run ProofCRA Action against clean self-repo
+        id: scan
+        uses: ./
+        with:
+          target-path: "."
+          regime: "CRA"
+          fail-on-cra-clock: "true"
+          run-tier3-proof: "true"
+
+      - name: Upload ProofCRA artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: proofcra-self-test-artifacts
+          path: proofcra-artifacts/
